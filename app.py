@@ -21,6 +21,7 @@ def register_customer():
         email = data.get('email')
         password = data.get('password')
         user_name = data.get('user_name')
+        phone_number = data.get('phone_number')
 
         if not email or not password or not user_name:
             return jsonify({"message": "Missing required fields!"}), 400
@@ -72,17 +73,22 @@ def register_admin():
 # User Login
 @app.route('/login', methods=['POST'])
 def login():
-    data = request.json
-    email = data['email']
-    password = data['password']
-    
-    user = db.query(Customer).filter_by(email=email).first()
-    
-    if user and bcrypt.checkpw(password.encode('utf-8'), user.password):
-        session['user_id'] = user.id
-        session['role'] = user.role  # Store user role in session
-        return jsonify({"message": "Login successful!"})
-    return jsonify({"message": "Invalid credentials!"}), 401
+    try:
+        data = request.json
+        email = data['email']
+        password = data['password']
+        
+        # Use the model's query object
+        user = Customer.query.filter_by(email=email).first()
+        
+        if user and bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
+            session['user_id'] = user.id
+            return jsonify({"message": "Login successful!"})
+        
+        return jsonify({"message": "Invalid credentials!"}), 401
+    except Exception as e:
+        return jsonify({"message": "Error occurred!", "error": str(e)}), 500
+
 
 # User Logout
 @app.route('/logout', methods=['POST'])
